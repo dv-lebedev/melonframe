@@ -7,7 +7,16 @@
 #include "melonframe.h"
 #include "melonframe_crc.h"
 
-void parser_init(stream_parser_t *p, const size_t buffer_size, PacketHandler h, void *ctx) {
+
+/* positions */
+static const uint32_t BEGINNING_OF_HEADER = 1;
+static const uint32_t END_OF_HEADER = 2;
+static const uint32_t END_OF_LEN_FIELD = 4;
+
+#define END_OF_PAYLOAD(p) (PROTO_HEADER + PROTO_PAYLOAD_SIZE + p->payload_len)
+
+
+void parser_init(stream_parser_t *p, const size_t buffer_size, const PacketHandler h, void *ctx) {
     memset(p, 0, sizeof(*p));
     p->buffer = malloc(buffer_size);
     p->state = STATE_SEARCH_HEADER;
@@ -31,18 +40,15 @@ void parser_free(stream_parser_t *p) {
 static int process_header(stream_parser_t *p, const uint8_t b) {
     p->buffer[p->pos++] = b;
 
-    if (p->pos == 2) {
+    if (p->pos == END_OF_HEADER) {
         const uint16_t header = (uint16_t)((p->buffer[0] << 8) | p->buffer[1]);
 
         if (header == PROTO_HEADER_VALUE) {
             p->state = STATE_READ_LENGTH;
         } else {
-
-            printf("desync header: %x\n", header);
-
             /* resync: slide the window by one byte */
             p->buffer[0] = p->buffer[1];
-            p->pos = 1;
+            p->pos = BEGINNING_OF_HEADER;
         }
     }
 
@@ -52,7 +58,7 @@ static int process_header(stream_parser_t *p, const uint8_t b) {
 static int process_length(stream_parser_t *p, const uint8_t b) {
     p->buffer[p->pos++] = b;
 
-    if (p->pos == 4) {
+    if (p->pos == END_OF_LEN_FIELD) {
         const uint16_t payload_len = (uint16_t)((p->buffer[2] << 8) | p->buffer[3]);
         p->payload_len = payload_len;
 
@@ -79,17 +85,18 @@ static int process_payload(stream_parser_t *p, const uint8_t b) {
 static int process_crc(stream_parser_t *p, const uint8_t b) {
     p->buffer[p->pos++] = b;
 
-    const int payload_size = PROTO_HEADER + PROTO_PAYLOAD_SIZE + p->payload_len;
+    const int payload_size = END_OF_PAYLOAD(p);
     if (p->pos < payload_size + 2) {
         return 0;
     }
 
-    const int crc_h = payload_size;
-    const int crc_l = payload_size + 1;
-    const uint16_t crc = (uint16_t)((p->buffer[crc_h] << 8) | p->buffer[crc_l]);
+    const uint16_t crc =
+        (uint16_t)((p->buffer[payload_size] << 8)  // CRC_H
+            | p->buffer[payload_size + 1]);        // CRC_L
+
     const uint16_t calc = crc16(p->buffer, 0, payload_size);
 
-    return crc == calc ? 1 : -1;;
+    return crc == calc ? 1 : -1;
 }
 
 int parser_process_byte(stream_parser_t *p, const uint8_t b) {
