@@ -1,13 +1,11 @@
 #include "melonframe_decoder.h"
-#include <string.h>
-#include "melonframe_crc.h"
-#include "melonframe_decoder.h"
 
-#include <stdbool.h>
-
-#include "melonframe.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "melonframe.h"
+#include "melonframe_crc.h"
 
 void parser_init(stream_parser_t *p, const size_t buffer_size, PacketHandler h, void *ctx) {
     memset(p, 0, sizeof(*p));
@@ -91,18 +89,10 @@ static int process_crc(stream_parser_t *p, const uint8_t b) {
     const uint16_t crc = (uint16_t)((p->buffer[crc_h] << 8) | p->buffer[crc_l]);
     const uint16_t calc = crc16(p->buffer, 0, payload_size);
 
-    const int valid = crc == calc ? 1 : -1;
-    if (valid) {
-        p->handler(p->ctx, p->buffer, p->pos);
-    }
-    reset(p);
-    return valid;
+    return crc == calc ? 1 : -1;;
 }
 
 int parser_process_byte(stream_parser_t *p, const uint8_t b) {
-
-    printf("%x - %x\n", b, p->pos);
-
     switch (p->state) {
         case STATE_SEARCH_HEADER:
             return process_header(p, b);
@@ -111,7 +101,12 @@ int parser_process_byte(stream_parser_t *p, const uint8_t b) {
         case STATE_READ_PAYLOAD:
             return process_payload(p, b);
         case STATE_READ_CRC:
-            return process_crc(p, b);
+            const int is_valid = process_crc(p, b);
+            if (is_valid) {
+                p->handler(p->ctx, p->buffer, p->pos);
+                reset(p);
+            };
+            return is_valid;
         default:
             return -1;
     }
