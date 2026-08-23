@@ -69,7 +69,7 @@ void decode_test() {
             };
 
     stream_parser_t parser;
-    parser_init(&parser, 1024, handler, NULL);
+    parser_init(&parser, 1024, handler, NULL, NULL);
 
     for (size_t i = 0; i < sizeof(encoded); i++) {
         parser_process_byte(&parser, encoded[i]);

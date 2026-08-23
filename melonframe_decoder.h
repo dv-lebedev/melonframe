@@ -12,18 +12,26 @@ typedef enum {
 
 typedef void (*PacketHandler)(void *ctx, uint8_t *data, size_t data_len);
 
+typedef void (*ErrorHandler)(void *ctx, int32_t error_code);
+
 typedef struct {
     parser_state_t state;
     uint8_t *buffer;
     size_t buffer_size;
     size_t payload_len;
-    int pos;
-    PacketHandler handler;
+    uint32_t pos;
+    PacketHandler packet_handler;
+    ErrorHandler error_handler;
     void *ctx;
 } stream_parser_t;
 
 /* Initialize / reset parser state. */
-void parser_init(stream_parser_t *p, size_t buffer_size, PacketHandler h, void *ctx);
+int32_t parser_init(
+    stream_parser_t *p,
+    size_t buffer_size,
+    PacketHandler packet_handler,
+    ErrorHandler error_handler,
+    void *ctx);
 
 void parser_free(stream_parser_t *p);
 
@@ -36,7 +44,7 @@ void parser_free(stream_parser_t *p);
  *  -1  -> a complete packet was read but CRC check failed (parser resets;
  *         no allocation left dangling).
  */
-int parser_process_byte(stream_parser_t *p, uint8_t b);
+int32_t parser_process_byte(stream_parser_t *p, uint8_t b);
 
 void reset(stream_parser_t *p);
 
