@@ -27,9 +27,6 @@ void parser_init(stream_parser_t *p, const size_t buffer_size, const PacketHandl
 void parser_free(stream_parser_t *p) {
     free(p->buffer);
     p->buffer = NULL;
-
-    free(p);
-    p = NULL;
 }
 
  void reset(stream_parser_t *p) {
