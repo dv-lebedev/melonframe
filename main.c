@@ -29,7 +29,7 @@ void encode_test() {
     }
 }
 
-void handler(void *ctx, int32_t status, uint8_t *data, size_t data_len) {
+static void handler(void *ctx, int32_t status, uint8_t *data, size_t data_len) {
     printf("Handler started:\n");
     for (size_t j = 0; j < data_len; j++) {
         printf("%x\n", data[j]);

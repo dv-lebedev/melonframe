@@ -59,8 +59,28 @@ static void notify_error(const melonframe_decoder_t *p, const melonframe_status_
     }
 }
 
-static melonframe_error_t process_header(melonframe_decoder_t *p, const uint8_t b) {
+static melonframe_error_t push_to_buffer(melonframe_decoder_t *p, const uint8_t b) {
+    if (!p) {
+        return MELONFRAME_ERR_NULL_POINTER;
+    }
+
+    if (!p->buffer) {
+        return MELONFRAME_ERR_BUFFER_IS_NO_INITIALIZED;
+    }
+
+    if (p->pos >= p->buffer_size) {
+        return MELONFRAME_ERR_BUFFER_OVERFLOW;
+    }
+
     p->buffer[p->pos++] = b;
+    return MELONFRAME_OK;
+}
+
+static melonframe_error_t process_header(melonframe_decoder_t *p, const uint8_t b) {
+    const melonframe_error_t err = push_to_buffer(p, b);
+    if (err != MELONFRAME_OK) {
+        return err;
+    }
 
     if (p->pos == MELONFRAME_POS_END_OF_HEADER) {
         const uint16_t header = (uint16_t)((p->buffer[0] << 8) | p->buffer[1]);
@@ -79,7 +99,10 @@ static melonframe_error_t process_header(melonframe_decoder_t *p, const uint8_t 
 }
 
 static melonframe_error_t process_length(melonframe_decoder_t *p, const uint8_t b) {
-    p->buffer[p->pos++] = b;
+    const melonframe_error_t err = push_to_buffer(p, b);
+    if (err != MELONFRAME_OK) {
+        return err;
+    }
 
     if (p->pos == MELONFRAME_POS_END_OF_LEN_FIELD) {
         const uint16_t payload_len = (uint16_t)((p->buffer[2] << 8) | p->buffer[3]);
@@ -99,7 +122,10 @@ static melonframe_error_t process_length(melonframe_decoder_t *p, const uint8_t 
 }
 
 static melonframe_error_t process_payload(melonframe_decoder_t *p, const uint8_t b) {
-    p->buffer[p->pos++] = b;
+    const melonframe_error_t err = push_to_buffer(p, b);
+    if (err != MELONFRAME_OK) {
+        return err;
+    }
 
     if ((p->pos - MELONFRAME_PROTO_HEADER_SIZE - MELONFRAME_PROTO_PAYLOAD_SIZE) == p->payload_len) {
         p->state = STATE_READ_CRC;
@@ -109,7 +135,10 @@ static melonframe_error_t process_payload(melonframe_decoder_t *p, const uint8_t
 }
 
 static melonframe_error_t process_crc(melonframe_decoder_t *p, const uint8_t b, melonframe_status_t *status) {
-    p->buffer[p->pos++] = b;
+    const melonframe_error_t err = push_to_buffer(p, b);
+    if (err != MELONFRAME_OK) {
+        return err;
+    }
 
     const uint32_t payload_size = MELONFRAME_PROTO_HEADER_SIZE + MELONFRAME_PROTO_PAYLOAD_SIZE + p->payload_len;
     if (p->pos < payload_size + 2) {
@@ -135,7 +164,7 @@ melonframe_error_t melonframe_decoder_process_byte(melonframe_decoder_t *p, cons
             return process_length(p, b);
         case STATE_READ_PAYLOAD:
             return process_payload(p, b);
-        case STATE_READ_CRC:
+        case STATE_READ_CRC: {
             melonframe_status_t status;
             const melonframe_error_t err = process_crc(p, b, &status);
 
@@ -148,6 +177,7 @@ melonframe_error_t melonframe_decoder_process_byte(melonframe_decoder_t *p, cons
             }
 
             return err;
+        }
         default:
             return MELONFRAME_ERR_UNKNOWN;
     }
