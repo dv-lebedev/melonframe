@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include "stdint.h"
 #include <unistd.h>
+
+#include "tests/encoding.h"
 #include "melonframe.h"
 
 void encode_test() {
@@ -99,6 +101,10 @@ void decode_test() {
 }
 
 int main(void) {
+
+    __encoding_test(3, 65537);
+
+    return 0;
 
     encode_test();
     decode_test();

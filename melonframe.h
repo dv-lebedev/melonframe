@@ -1,5 +1,30 @@
 /*
-* Packet format (all multi-byte fields big-endian / network byte order):
+ *    MIT License
+ *
+ *    Copyright (c) 2026 Denis Lebedev
+ *
+ *    Permission is hereby granted, free of charge, to any person obtaining a copy
+ *    of this software and associated documentation files (the "Software"), to deal
+ *    in the Software without restriction, including without limitation the rights
+ *    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *    copies of the Software, and to permit persons to whom the Software is
+ *    furnished to do so, subject to the following conditions:
+ *
+ *    The above copyright notice and this permission notice shall be included in all
+ *    copies or substantial portions of the Software.
+ *
+ *    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *    SOFTWARE.
+ */
+
+
+/*
+ *   Packet format (all multi-byte fields big-endian / network byte order):
  *
  *   +--------+--------+--------+--------+------------------+--------+--------+
  *   |  0xAA  |  0x55  | SIZE_H | SIZE_L | DATA (N bytes)   | CRC_H  | CRC_L  |
@@ -10,15 +35,14 @@
  *   - Data   (N bytes): the caller-supplied payload, N = bytes_size.
  *   - CRC    (2 bytes): CRC-16 computed over [Header | Size | Data].
  *
- * Total packet size = PROTO_HEADER + PROTO_SIZE + bytes_size + PROTO_CRC,
- * and must not exceed PROTO_MAX_SIZE (65535) since SIZE is a 16-bit field.
+ *   Total packet size = PROTO_HEADER + PROTO_SIZE + bytes_size + PROTO_CRC,
+ *   and must not exceed PROTO_MAX_SIZE (65535) since SIZE is a 16-bit field.
  */
 
 #ifndef INCLUDE_MELONFRAME_H
 #define INCLUDE_MELONFRAME_H
 
 #include <stdlib.h>
-#include <string.h>
 #include <stdint.h>
 
 enum {
@@ -59,7 +83,6 @@ typedef void (*melonframe_decoder_event_handler_t)(
     uint8_t *data,
     size_t data_len);
 
-
 melonframe_result_t melonframe_get_size_for_encoded(size_t buffer_size, size_t *encoded_size);
 
 melonframe_result_t melonframe_encode(
@@ -99,6 +122,9 @@ melonframe_result_t melonframe_decoder_free(melonframe_decoder_t *p);
 
 melonframe_result_t melonframe_decoder_reset(melonframe_decoder_t *p);
 
-melonframe_result_t melonframe_decoder_process_byte(melonframe_decoder_t *p, uint8_t b, melonframe_decoder_event_t *status);
+melonframe_result_t melonframe_decoder_process_byte(
+    melonframe_decoder_t *p,
+    uint8_t b,
+    melonframe_decoder_event_t *status);
 
 #endif // INCLUDE_MELONFRAME_H
