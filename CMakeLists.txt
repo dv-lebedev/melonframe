@@ -4,11 +4,13 @@ project(melonframe C)
 set(CMAKE_C_STANDARD 11)
 
 add_executable(melonframe main.c
-        melonframe_crc.c
-        melonframe_crc.h
-        melonframe_encoder.c
-        melonframe_encoder.h
-        melonframe_decoder.c
-        melonframe_decoder.h
         melonframe.h
+        melonframe.c
+)
+
+option(BUILD_SHARED_LIBS "Build melonframe as a shared library" OFF)
+
+add_library(melonframe_lib
+        melonframe.h
+        melonframe.c
 )

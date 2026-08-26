@@ -1,14 +1,15 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "melonframe_decoder.h"
 #include "stdint.h"
-#include "melonframe_encoder.h"
+#include <unistd.h>
+#include "melonframe.h"
 
 void encode_test() {
     const uint8_t arr[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x10};
 
     size_t encoded_size;
-    melonframe_error_t err = melonframe_get_size_for_encoded(sizeof(arr), &encoded_size);
+    melonframe_result_t err = melonframe_get_size_for_encoded(sizeof(arr), &encoded_size);
     if (err != MELONFRAME_OK) {
         return;
     }
@@ -29,7 +30,11 @@ void encode_test() {
     }
 }
 
-static void handler(void *ctx, int32_t status, uint8_t *data, size_t data_len) {
+void encode_counter(uint32_t start, uint32_t end) {
+
+}
+
+static void handler(void *ctx, melonframe_decoder_event_t status, uint8_t *data, size_t data_len) {
     printf("Handler started:\n");
     for (size_t j = 0; j < data_len; j++) {
         printf("%x\n", data[j]);
@@ -75,10 +80,18 @@ void decode_test() {
             };
 
     melonframe_decoder_t parser;
-    melonframe_decoder_init(&parser, 1024, handler, NULL);
+    melonframe_buffer_t buffer = {
+        .data = malloc(1024),
+        .size = 1024,
+    };
+    melonframe_decoder_init(&parser, &buffer, handler, NULL);
 
+    melonframe_decoder_event_t status;
     for (size_t i = 0; i < sizeof(encoded); i++) {
-        melonframe_decoder_process_byte(&parser, encoded[i]);
+        melonframe_decoder_process_byte(&parser, encoded[i], &status);
+        if (status == MELONFRAME_STATUS_NEW_PACKET) {
+            handler(NULL, status, buffer.data, parser.pos);
+        }
     }
 
     melonframe_decoder_free(&parser);
@@ -90,6 +103,70 @@ int main(void) {
     encode_test();
     decode_test();
 
+    return 0;
+}
+
+
+typedef enum {
+    MELONFRAME_MODE_UNKNOWN = 0,
+    MELONFRAME_MODE_ENCODE = 1,
+    MELONFRAME_MODE_DECODE = 2,
+} melonframe_mode_t;
+
+
+int test(int argc, char **argv)
+{
+    melonframe_mode_t mode = 0;
+    char *filePath;
+    uint8_t counter_enabled = 0;
+    const uint8_t template[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x10};
+
+    int option;
+    while ((option = getopt(argc, argv, "m:f:c:t:")) != -1) {
+        switch (option) {
+            case 'm':
+                if (strcmp(optarg, "encode") == 0)
+                    mode = MELONFRAME_MODE_ENCODE;
+                else if (strcmp(optarg, "decode") == 0)
+                    mode = MELONFRAME_MODE_DECODE;
+                break;
+            case 'f':
+                if (optarg != NULL) {
+                    filePath = malloc(strlen(optarg) + 1);
+                    if (filePath != NULL) {
+                        strcpy(filePath, optarg);
+                        printf("filePath: %s\n", filePath);
+                    }
+                }
+                break;
+            case 'c':
+                counter_enabled = 1;
+                printf("counter: %s\n", optarg);
+                break;
+            case 't':
+                printf("template: %s\n", optarg);
+            case '?':
+                exit(EXIT_FAILURE);
+                break;
+            default:
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    if (mode == MELONFRAME_MODE_UNKNOWN) {
+        printf("err: mode is not selected\n");
+        return 0;
+    }
+
+    if (mode == MELONFRAME_MODE_ENCODE) {
+        FILE *f = fopen(filePath, "wb");
+        fwrite(template, sizeof(template), 1, f);
+        fclose(f);
+    }
+
+    /* Print remaining arguments. */
+    for (; optind < argc; optind++)
+        printf("%s\n", argv[optind]);
     return 0;
 }
 

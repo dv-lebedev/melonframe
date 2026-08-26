@@ -14,8 +14,12 @@
  * and must not exceed PROTO_MAX_SIZE (65535) since SIZE is a 16-bit field.
  */
 
-#ifndef MELONFRAME_MELONFRAME_H
-#define MELONFRAME_MELONFRAME_H
+#ifndef INCLUDE_MELONFRAME_H
+#define INCLUDE_MELONFRAME_H
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 enum {
     MELONFRAME_PROTO_HEADER_SIZE = 2,
@@ -26,11 +30,16 @@ enum {
 };
 
 typedef enum {
-    MELONFRAME_STATUS_BYTE_PROCESSED = 0,
+    MELONFRAME_STATUS_PROCESSING_HEADER = 1,
+    MELONFRAME_STATUS_PROCESSING_LENGTH = 2,
+    MELONFRAME_STATUS_PROCESSING_PAYLOAD = 3,
+    MELONFRAME_STATUS_PROCESSING_CRC = 4,
+
+
     MELONFRAME_STATUS_NEW_PACKET = 1,
     MELONFRAME_STATUS_CRC_ERROR = -1,
     MELONFRAME_STATUS_OUT_OF_SYNC = -2,
-} melonframe_status_t;
+} melonframe_decoder_event_t;
 
 typedef enum {
     MELONFRAME_OK = 0,
@@ -40,7 +49,56 @@ typedef enum {
     MELONFRAME_ERR_BUFFER_OVERFLOW = -4,
     MELONFRAME_ERR_NULL_POINTER = -5,
     MELONFRAME_ERR_BUFFER_IS_NO_INITIALIZED = -6,
-} melonframe_error_t;
+} melonframe_result_t;
+
+typedef uint16_t (*melonframe_crc16_t)(const uint8_t *data, size_t offset, size_t data_len);
+
+typedef void (*melonframe_decoder_event_handler_t)(
+    void *ctx,
+    melonframe_decoder_event_t status,
+    uint8_t *data,
+    size_t data_len);
 
 
-#endif //MELONFRAME_MELONFRAME_H
+melonframe_result_t melonframe_get_size_for_encoded(size_t buffer_size, size_t *encoded_size);
+
+melonframe_result_t melonframe_encode(
+    const uint8_t *bytes,
+    size_t bytes_size,
+    uint8_t *encoded,
+    size_t encoded_size);
+
+typedef enum {
+    STATE_SEARCH_HEADER,
+    STATE_READ_LENGTH,
+    STATE_READ_PAYLOAD,
+    STATE_READ_CRC
+} decoder_state_t;
+
+typedef struct {
+    uint8_t *data;
+    size_t size;
+} melonframe_buffer_t;
+
+typedef struct {
+    decoder_state_t state;
+    melonframe_buffer_t *buffer;
+    size_t payload_len;
+    uint32_t pos;
+    melonframe_decoder_event_handler_t handler;
+    void *context;
+} melonframe_decoder_t;
+
+melonframe_result_t melonframe_decoder_init(
+    melonframe_decoder_t *p,
+    melonframe_buffer_t *buffer,
+    melonframe_decoder_event_handler_t handler,
+    void *context);
+
+melonframe_result_t melonframe_decoder_free(melonframe_decoder_t *p);
+
+melonframe_result_t melonframe_decoder_reset(melonframe_decoder_t *p);
+
+melonframe_result_t melonframe_decoder_process_byte(melonframe_decoder_t *p, uint8_t b, melonframe_decoder_event_t *status);
+
+#endif // INCLUDE_MELONFRAME_H
