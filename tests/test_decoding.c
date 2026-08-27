@@ -137,11 +137,11 @@ static int32_t compare_files(const char *encoded_filepath, const char *decoded_f
         }
 
         if (enc == 0 && dec == 0) {
-            printf("compare_files: files have same data.\n");
+            printf("compare_files: The files contain the same data.\n");
             return 0;
         }
 
-        size_t len = enc < dec ? enc : dec;
+        const size_t len = enc < dec ? enc : dec;
         for (size_t i = 0; i < len; i++) {
             if (enc_buffer[i] != dec_buffer[i]) {
                 printf("compare_files: pos: %llu vals: %i != %i\n", i, enc_buffer[i], dec_buffer[i]);
@@ -160,7 +160,8 @@ int main() {
     const char *encoded_filepath = "encoded.dat";
     const char *decoded_filepath = "decoded.dat";
 
-    int32_t res = write_repeated_encoded_packages(10, 65535, encoded_filepath);
+    const uint32_t min_pkg_size = 6;
+    int32_t res = write_repeated_encoded_packages(16 - min_pkg_size, 0xFFFF, encoded_filepath);
     if (res != 0) {
         printf("write_repeated_encoded_packages returned %d\n", res);
         return -1;
