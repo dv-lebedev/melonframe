@@ -102,7 +102,10 @@ void decode_test() {
 
 int main(void) {
 
-    __encoding_test(3, 65537);
+    simple_encode_test();
+
+    write_repeated_encoded_packages(10, 100, "encoded.dat");
+    decode_and_write_encoded_packages("encoded.dat", "decoded.dat");
 
     return 0;
 

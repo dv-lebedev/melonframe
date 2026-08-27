@@ -25,6 +25,7 @@
 
 #include "melonframe.h"
 #include <stdint.h>
+#include <string.h>
 
 
 uint16_t melonframe_crc16(const uint8_t *data, const size_t offset, const size_t data_len) {
