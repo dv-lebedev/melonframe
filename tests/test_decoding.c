@@ -105,6 +105,7 @@ static int32_t decode_and_write_encoded_packages(const char *encoded_filepath, c
                 printf("melonframe_decoder_process_byte returned %d\n", res);
                 fclose(decoded_file);
                 fclose(encoded_file);
+                free(decoder_buffer.data);
                 return -1;
             }
         }
@@ -112,6 +113,7 @@ static int32_t decode_and_write_encoded_packages(const char *encoded_filepath, c
 
     fclose(decoded_file);
     fclose(encoded_file);
+    free(decoder_buffer.data);
     return 0;
 }
 
