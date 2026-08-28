@@ -53,6 +53,10 @@
     #define MELONFRAME_API
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum {
     MELONFRAME_PROTO_HEADER_SIZE = 2,
     MELONFRAME_PROTO_PAYLOAD_SIZE = 2,
@@ -133,5 +137,9 @@ MELONFRAME_API melonframe_result_t melonframe_decoder_process_byte(
     melonframe_decoder_t *p,
     uint8_t b,
     melonframe_decoder_event_t *status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // INCLUDE_MELONFRAME_H

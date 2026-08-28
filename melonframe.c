@@ -22,7 +22,6 @@
  *    SOFTWARE.
  */
 
-#define MELONFRAME_BUILD
 #include "melonframe.h"
 #include <stdint.h>
 #include <string.h>
