@@ -22,13 +22,13 @@
  *    SOFTWARE.
  */
 
-
+#define MELONFRAME_BUILD
 #include "melonframe.h"
 #include <stdint.h>
 #include <string.h>
 
 
-uint16_t melonframe_crc16(const uint8_t *data, const size_t offset, const size_t data_len) {
+static uint16_t melonframe_crc16(const uint8_t *data, const size_t offset, const size_t data_len) {
     uint16_t crc = 0xFFFF;
     for (size_t i = offset; i < data_len; i++) {
         crc ^= (uint16_t)data[i];
@@ -126,7 +126,7 @@ melonframe_result_t melonframe_decoder_free(melonframe_decoder_t *p) {
     return MELONFRAME_OK;
 }
 
-uint8_t *get_buffer_data(melonframe_decoder_t *p) {
+static uint8_t *get_buffer_data(melonframe_decoder_t *p) {
     if (!p || !p->buffer || !p->buffer->data) {
         return NULL;
     }

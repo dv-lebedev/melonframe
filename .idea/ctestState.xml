@@ -2,6 +2,8 @@
 <project version="4">
   <component name="CidrCTestProjectState">
     <ctestState>
+      <lineNumber testId="path:CMakeLists.txt test:TestDecoding" value="20" />
+      <lineNumber testId="path:CMakeLists.txt test:TestEncoding" value="17" />
       <lineNumber testId="path:CMakeLists.txt test:UnitTests" value="16" />
     </ctestState>
   </component>

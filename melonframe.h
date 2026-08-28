@@ -45,6 +45,14 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+    #define MELONFRAME_API __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+    #define MELONFRAME_API __attribute__((visibility("default")))
+#else
+    #define MELONFRAME_API
+#endif
+
 enum {
     MELONFRAME_PROTO_HEADER_SIZE = 2,
     MELONFRAME_PROTO_PAYLOAD_SIZE = 2,
@@ -82,9 +90,9 @@ typedef void (*melonframe_decoder_event_handler_t)(
     uint8_t *data,
     size_t data_len);
 
-melonframe_result_t melonframe_get_size_for_encoded(size_t buffer_size, size_t *encoded_size);
+MELONFRAME_API melonframe_result_t melonframe_get_size_for_encoded(size_t buffer_size, size_t *encoded_size);
 
-melonframe_result_t melonframe_encode(
+MELONFRAME_API melonframe_result_t melonframe_encode(
     const uint8_t *bytes,
     size_t bytes_size,
     uint8_t *encoded,
@@ -111,17 +119,17 @@ typedef struct {
     void *context;
 } melonframe_decoder_t;
 
-melonframe_result_t melonframe_decoder_init(
+MELONFRAME_API melonframe_result_t melonframe_decoder_init(
     melonframe_decoder_t *p,
     melonframe_buffer_t *buffer,
     melonframe_decoder_event_handler_t handler,
     void *context);
 
-melonframe_result_t melonframe_decoder_free(melonframe_decoder_t *p);
+MELONFRAME_API melonframe_result_t melonframe_decoder_free(melonframe_decoder_t *p);
 
-melonframe_result_t melonframe_decoder_reset(melonframe_decoder_t *p);
+MELONFRAME_API melonframe_result_t melonframe_decoder_reset(melonframe_decoder_t *p);
 
-melonframe_result_t melonframe_decoder_process_byte(
+MELONFRAME_API melonframe_result_t melonframe_decoder_process_byte(
     melonframe_decoder_t *p,
     uint8_t b,
     melonframe_decoder_event_t *status);
