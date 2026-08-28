@@ -117,9 +117,14 @@ static int32_t decode_and_write_encoded_packages(const char *encoded_filepath, c
 
 static int32_t compare_files(const char *encoded_filepath, const char *decoded_filepath) {
     FILE *encoded_file = fopen(encoded_filepath, "rb");
-    FILE *decoded_file = fopen(decoded_filepath, "rb");
-    if (encoded_file == NULL || decoded_file == NULL) {
+    if (encoded_file == NULL) {
         printf("encoded_file == NULL");
+        return -1;
+    }
+    FILE *decoded_file = fopen(decoded_filepath, "rb");
+    if (decoded_file == NULL) {
+        fclose(encoded_file);
+        printf("decoded_file == NULL");
         return -1;
     }
 
@@ -138,6 +143,8 @@ static int32_t compare_files(const char *encoded_filepath, const char *decoded_f
 
         if (enc == 0 && dec == 0) {
             printf("compare_files: The files contain the same data.\n");
+            fclose(encoded_file);
+            fclose(decoded_file);
             return 0;
         }
 
