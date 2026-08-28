@@ -22,7 +22,6 @@
  *    SOFTWARE.
  */
 
-#include <io.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -60,17 +59,16 @@ static void handler(void *ctx, melonframe_decoder_event_t status, uint8_t *data,
     if (status == MELONFRAME_STATUS_NEW_PACKET) {
         FILE *f = (FILE*)ctx;
         fwrite(data, sizeof(uint8_t),data_len, f);
-
-        for (int i = 0; i < data_len; i++) {
-            //printf("data[%i]: %i\n", i, data[i]);
-        }
-
     } else {
         printf("handler melonframe_decoder_event_t returned %d\n", status);
     }
 }
 
-static int32_t decode_and_write_encoded_packages(const char *encoded_filepath, const char *decoded_filepath) {
+static int32_t decode_and_write_encoded_packages(
+    const char *encoded_filepath,
+    const char *decoded_filepath,
+    const size_t decoder_buffer_size,
+    const size_t read_buffer_size) {
     FILE *encoded_file = fopen(encoded_filepath, "rb");
     if (encoded_file == NULL) {
         printf("encoded_file == NULL");
@@ -86,15 +84,15 @@ static int32_t decode_and_write_encoded_packages(const char *encoded_filepath, c
 
     melonframe_decoder_t decoder;
     melonframe_buffer_t decoder_buffer = {
-        .data = malloc(sizeof(uint8_t) * 1024),
-        .size = 1024,
+        .data = malloc(sizeof(uint8_t) * decoder_buffer_size),
+        .size = decoder_buffer_size,
     };
     melonframe_decoder_event_t decoder_event;
     melonframe_decoder_init(&decoder, &decoder_buffer, handler, (void*)decoded_file);
 
-    uint8_t buffer[1024];
+    uint8_t buffer[read_buffer_size];
     while (1) {
-        const size_t read = fread(buffer, sizeof(uint8_t), 6, encoded_file);
+        const size_t read = fread(buffer, sizeof(uint8_t), read_buffer_size, encoded_file);
         if (read == 0) {
             break;
         }
@@ -117,7 +115,11 @@ static int32_t decode_and_write_encoded_packages(const char *encoded_filepath, c
     return 0;
 }
 
-static int32_t compare_files(const char *encoded_filepath, const char *decoded_filepath) {
+static int32_t compare_files(
+    const char *encoded_filepath,
+    const char *decoded_filepath,
+    const size_t encoded_buffer_size,
+    const size_t decoded_buffer_size) {
     FILE *encoded_file = fopen(encoded_filepath, "rb");
     if (encoded_file == NULL) {
         printf("encoded_file == NULL");
@@ -130,12 +132,12 @@ static int32_t compare_files(const char *encoded_filepath, const char *decoded_f
         return -1;
     }
 
-    uint8_t enc_buffer[1024];
-    uint8_t dec_buffer[1024];
+    uint8_t enc_buffer[encoded_buffer_size];
+    uint8_t dec_buffer[decoded_buffer_size];
 
     while (1) {
-        const size_t enc = fread(enc_buffer, sizeof(uint8_t), 1024, encoded_file);
-        const size_t dec = fread(dec_buffer, sizeof(uint8_t), 1024, decoded_file);
+        const size_t enc = fread(enc_buffer, sizeof(uint8_t), encoded_buffer_size, encoded_file);
+        const size_t dec = fread(dec_buffer, sizeof(uint8_t), decoded_buffer_size, decoded_file);
         if (enc != dec) {
             printf("compare_files: %llu != %llu\n", enc, dec);
             fclose(encoded_file);
@@ -176,11 +178,11 @@ int main() {
         return -1;
     }
 
-    res = decode_and_write_encoded_packages(encoded_filepath, decoded_filepath);
+    res = decode_and_write_encoded_packages(encoded_filepath, decoded_filepath, 1024, 1024);
     if (res != 0) {
         printf("decode_and_write_encoded_packages returned %d\n", res);
         return -1;
     }
 
-    return compare_files(encoded_filepath, decoded_filepath);
+    return compare_files(encoded_filepath, decoded_filepath, 1024, 1024);
 }
