@@ -230,28 +230,35 @@ static MelonframeResult process_crc(struct MelonframeDecoder *p, const uint8_t b
             | buf[data_size + 1]);        // CRC_L
 
     const uint16_t calc = melonframe_crc16(buf, 0, data_size);
-    * status = (calc == crc ? MELONFRAME_STATUS_NEW_PACKET : MELONFRAME_STATUS_CRC_ERROR);
+    *status = (calc == crc ? MELONFRAME_STATUS_NEW_PACKET : MELONFRAME_STATUS_CRC_ERROR);
 
     return MELONFRAME_OK;
 }
 
 MelonframeResult melonframe_decoder_process_byte(struct MelonframeDecoder *p, const uint8_t b, enum MelonframeStatus *status) {
+    MelonframeResult res = MELONFRAME_OK;
     switch (p->state) {
         case MELONFRAME_DECODER_STATE_SEARCH_HEADER:
-            return process_header(p, b, status);
+            res = process_header(p, b, status);
+            break;
         case MELONFRAME_DECODER_STATE_READ_LENGTH:
-            return process_length(p, b, status);
+            res = process_length(p, b, status);
+            break;
         case MELONFRAME_DECODER_STATE_READ_PAYLOAD:
-            return process_payload(p, b, status);
+            res = process_payload(p, b, status);
+            break;
         case MELONFRAME_DECODER_STATE_READ_CRC: {
-            const MelonframeResult err = process_crc(p, b, status);
-            if (*status == MELONFRAME_STATUS_NEW_PACKET || *status < 0) {
-                p->handler(p->context, *status, p->buffer->data, p->pos);
-                melonframe_decoder_reset(p);
-            }
-            return err;
+            res = process_crc(p, b, status);
+            break;
         }
         default:
-            return MELONFRAME_ERR_UNKNOWN;
+            res = MELONFRAME_ERR_UNKNOWN;
     }
+
+    p->handler(p->context, *status, p->buffer->data, p->pos);
+    if (*status == MELONFRAME_STATUS_NEW_PACKET || *status < 0) {
+        melonframe_decoder_reset(p);
+    }
+
+    return res;
 }
