@@ -146,35 +146,38 @@ static int32_t compare_files(
     uint8_t enc_buffer[encoded_buffer_size];
     uint8_t dec_buffer[decoded_buffer_size];
 
+    int32_t result = 0;
     while (1) {
         const size_t enc = fread(enc_buffer, sizeof(uint8_t), encoded_buffer_size, encoded_file);
         const size_t dec = fread(dec_buffer, sizeof(uint8_t), decoded_buffer_size, decoded_file);
         if (enc != dec) {
             printf("compare_files: %llu != %llu\n", enc, dec);
-            fclose(encoded_file);
-            fclose(decoded_file);
-            return -1;
+            result = -1;
+            break;
         }
 
         if (enc == 0 && dec == 0) {
             printf("compare_files: The files contain the same data.\n");
-            fclose(encoded_file);
-            fclose(decoded_file);
-            return 0;
+            break;
         }
 
         const size_t len = enc < dec ? enc : dec;
-        for (size_t i = 0; i < len; i++) {
+        size_t i;
+        for (i = 0; i < len; i++) {
             if (enc_buffer[i] != dec_buffer[i]) {
                 printf("compare_files: pos: %llu vals: %i != %i\n", i, enc_buffer[i], dec_buffer[i]);
-                fclose(encoded_file);
-                fclose(decoded_file);
-                return -1;
+                break;
             }
+        }
+        if (i < len) {
+            result = -1;
+            break;
         }
     }
 
-    return 0;
+    fclose(encoded_file);
+    fclose(decoded_file);
+    return result;
 }
 
 int main() {
