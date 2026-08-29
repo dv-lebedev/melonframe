@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <string.h>
 
-
+/* CRC-16-IBM (Modbus) implementation */
 static uint16_t melonframe_crc16(const uint8_t *data, const size_t offset, const size_t data_len) {
     uint16_t crc = 0xFFFF;
     for (size_t i = offset; i < data_len; i++) {
