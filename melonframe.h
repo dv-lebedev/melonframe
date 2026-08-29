@@ -58,36 +58,38 @@ extern "C" {
 #endif
 
 enum MelonframeProto {
-    MELONFRAME_PROTO_HEADER_SIZE = 2,
-    MELONFRAME_PROTO_PAYLOAD_SIZE = 2,
-    MELONFRAME_PROTO_CRC_SIZE = 2,
+    MELONFRAME_PROTO_HEADER_SIZE    = 2,
+    MELONFRAME_PROTO_PAYLOAD_SIZE   = 2,
+    MELONFRAME_PROTO_CRC_SIZE       = 2,
     MELONFRAME_PROTO_FRAME_MAX_SIZE = 65535,
-    MELONFRAME_PROTO_HEADER_VALUE = 0xAA55,
+    MELONFRAME_PROTO_HEADER_VALUE   = 0xAA55,
 };
 
 enum MelonframeStatus {
-    MELONFRAME_STATUS_PROCESSING_CRC = 5,
+    MELONFRAME_STATUS_PROCESSING_CRC     = 5,
     MELONFRAME_STATUS_PROCESSING_PAYLOAD = 4,
-    MELONFRAME_STATUS_PROCESSING_LENGTH = 3,
-    MELONFRAME_STATUS_PROCESSING_HEADER = 2,
-    MELONFRAME_STATUS_NEW_PACKET = 1,
-    MELONFRAME_STATUS_NONE = 0,
-    MELONFRAME_STATUS_CRC_ERROR = -1,
-    MELONFRAME_STATUS_OUT_OF_SYNC = -2,
-    MELONFRAME_STATUS_PAYLOAD_TOO_LARGE = -3,
+    MELONFRAME_STATUS_PROCESSING_LENGTH  = 3,
+    MELONFRAME_STATUS_PROCESSING_HEADER  = 2,
+    MELONFRAME_STATUS_NEW_PACKET         = 1,
+    MELONFRAME_STATUS_NONE               = 0,
+    MELONFRAME_STATUS_CRC_ERROR          = -1,
+    MELONFRAME_STATUS_OUT_OF_SYNC        = -2,
+    MELONFRAME_STATUS_PAYLOAD_TOO_LARGE  = -3,
 };
 
+MELONFRAME_API const char *melonframe_status_to_string(enum MelonframeStatus status);
+
 typedef enum MelonframeResult {
-    MELONFRAME_OK = 0,
-    MELONFRAME_ERR_UNKNOWN = -1,
-    MELONFRAME_ERR_ALLOC = -2,
-    MELONFRAME_ERR_NULL_ARG = -3,
-    MELONFRAME_ERR_BUFFER_OVERFLOW = -4,
-    MELONFRAME_ERR_NULL_POINTER = -5,
-    MELONFRAME_ERR_BUFFER_IS_NO_INITIALIZED = -6,
+    MELONFRAME_OK                            = 0,
+    MELONFRAME_ERR_UNKNOWN                   = -1,
+    MELONFRAME_ERR_ALLOC                     = -2,
+    MELONFRAME_ERR_NULL_ARG                  = -3,
+    MELONFRAME_ERR_BUFFER_OVERFLOW           = -4,
+    MELONFRAME_ERR_NULL_POINTER              = -5,
+    MELONFRAME_ERR_BUFFER_IS_NOT_INITIALIZED = -6,
 } MelonframeResult;
 
-typedef uint16_t (*melonframe_crc16_t)(const uint8_t *data, size_t offset, size_t data_len);
+MELONFRAME_API const char *melonframe_result_to_string(MelonframeResult result);
 
 typedef void (*melonframe_decoder_event_handler_t)(
     void *ctx,

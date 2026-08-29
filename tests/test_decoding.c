@@ -27,7 +27,11 @@
 
 #include "../melonframe.h"
 
-static int32_t write_repeated_encoded_packages(const uint16_t package_size, const uint64_t packages_count, const char *filepath) {
+static int32_t write_repeated_encoded_packages(
+    const uint16_t package_size,
+    const uint64_t packages_count,
+    const char *filepath) {
+
     uint8_t test[package_size];
     uint8_t counter = 0;
     for (uint16_t i = 0; i < package_size; i++) {
@@ -39,7 +43,8 @@ static int32_t write_repeated_encoded_packages(const uint16_t package_size, cons
     size_t encoded_size = 0;
     const MelonframeResult res = melonframe_get_size_for_encoded(sizeof(test), &encoded_size);
     if (res != MELONFRAME_OK) {
-        printf("melonframe_decoder_process_byte returned %d\n, encoded_size: %llu\n", res, encoded_size);
+        printf("melonframe_decoder_process_byte returned %s\n, encoded_size: %llu\n",
+            melonframe_result_to_string(res), encoded_size);
         fclose(f);
         return -1;
     }
@@ -47,7 +52,7 @@ static int32_t write_repeated_encoded_packages(const uint16_t package_size, cons
     uint8_t encoded[encoded_size];
     melonframe_encode(test, package_size, encoded, encoded_size);
 
-    for (int i = 0; i < packages_count; i++) {
+    for (uint64_t i = 0; i < packages_count; i++) {
         fwrite(encoded, encoded_size, 1, f);
     }
 
@@ -63,7 +68,7 @@ static void handler(void *ctx, enum MelonframeStatus status, uint8_t *data, cons
         if (status == MELONFRAME_STATUS_OUT_OF_SYNC) {
             printf("decoder handler MELONFRAME_STATUS_OUT_OF_SYNC: %d\n", data[0]);
         } else {
-            printf("decoder handler returned: %d\n", status);
+            printf("decoder handler returned: %s\n", melonframe_status_to_string(status));
         }
     }
 }
@@ -73,6 +78,7 @@ static int32_t decode_and_write_encoded_packages(
     const char *decoded_filepath,
     const size_t decoder_buffer_size,
     const size_t read_buffer_size) {
+
     FILE *encoded_file = fopen(encoded_filepath, "rb");
     if (encoded_file == NULL) {
         printf("encoded_file == NULL");
@@ -104,7 +110,7 @@ static int32_t decode_and_write_encoded_packages(
         for (int i = 0; i < read; i++) {
             const MelonframeResult res = melonframe_decoder_process_byte(&decoder, buffer[i], &decoder_event);
             if (res != MELONFRAME_OK) {
-                printf("melonframe_decoder_process_byte returned %d\n", res);
+                printf("melonframe_decoder_process_byte returned %s\n", melonframe_result_to_string(res));
                 fclose(decoded_file);
                 fclose(encoded_file);
                 free(decoder_buffer.data);
@@ -124,6 +130,7 @@ static int32_t compare_files(
     const char *decoded_filepath,
     const size_t encoded_buffer_size,
     const size_t decoded_buffer_size) {
+
     FILE *encoded_file = fopen(encoded_filepath, "rb");
     if (encoded_file == NULL) {
         printf("encoded_file == NULL");

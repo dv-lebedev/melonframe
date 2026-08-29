@@ -42,6 +42,34 @@ static uint16_t melonframe_crc16(const uint8_t *data, const size_t offset, const
     return crc;
 }
 
+const char *melonframe_status_to_string(const enum MelonframeStatus status) {
+    switch (status) {
+        case MELONFRAME_STATUS_PROCESSING_CRC:     return "MELONFRAME_STATUS_PROCESSING_CRC";
+        case MELONFRAME_STATUS_PROCESSING_PAYLOAD: return "MELONFRAME_STATUS_PROCESSING_PAYLOAD";
+        case MELONFRAME_STATUS_PROCESSING_LENGTH:  return "MELONFRAME_STATUS_PROCESSING_LENGTH";
+        case MELONFRAME_STATUS_PROCESSING_HEADER:  return "MELONFRAME_STATUS_PROCESSING_HEADER";
+        case MELONFRAME_STATUS_NEW_PACKET:         return "MELONFRAME_STATUS_NEW_PACKET";
+        case MELONFRAME_STATUS_NONE:               return "MELONFRAME_STATUS_NONE";
+        case MELONFRAME_STATUS_CRC_ERROR:          return "MELONFRAME_STATUS_CRC_ERROR";
+        case MELONFRAME_STATUS_OUT_OF_SYNC:        return "MELONFRAME_STATUS_OUT_OF_SYNC";
+        case MELONFRAME_STATUS_PAYLOAD_TOO_LARGE:  return "MELONFRAME_STATUS_PAYLOAD_TOO_LARGE";
+        default:                                   return "MELONFRAME_STATUS_UNKNOWN";
+    }
+}
+
+const char *melonframe_result_to_string(const MelonframeResult result) {
+    switch (result) {
+        case MELONFRAME_OK:                            return "MELONFRAME_OK";
+        case MELONFRAME_ERR_UNKNOWN:                   return "MELONFRAME_ERR_UNKNOWN";
+        case MELONFRAME_ERR_ALLOC:                     return "MELONFRAME_ERR_ALLOC";
+        case MELONFRAME_ERR_NULL_ARG:                  return "MELONFRAME_ERR_NULL_ARG";
+        case MELONFRAME_ERR_BUFFER_OVERFLOW:           return "MELONFRAME_ERR_BUFFER_OVERFLOW";
+        case MELONFRAME_ERR_NULL_POINTER:              return "MELONFRAME_ERR_NULL_POINTER";
+        case MELONFRAME_ERR_BUFFER_IS_NOT_INITIALIZED: return "MELONFRAME_ERR_BUFFER_IS_NOT_INITIALIZED";
+        default:                                       return "MELONFRAME_RESULT_UNKNOWN";
+    }
+}
+
 MelonframeResult melonframe_get_size_for_encoded(const size_t buffer_size, size_t *encoded_size) {
     const size_t size = buffer_size + MELONFRAME_PROTO_HEADER_SIZE +
             MELONFRAME_PROTO_PAYLOAD_SIZE + MELONFRAME_PROTO_CRC_SIZE;
@@ -138,7 +166,7 @@ static MelonframeResult push_to_buffer(struct MelonframeDecoder *p, const uint8_
     }
 
     if (!p->buffer || !p->buffer->data) {
-        return MELONFRAME_ERR_BUFFER_IS_NO_INITIALIZED;
+        return MELONFRAME_ERR_BUFFER_IS_NOT_INITIALIZED;
     }
 
     if (p->pos >= p->buffer->size) {
