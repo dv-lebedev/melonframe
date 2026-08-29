@@ -189,7 +189,6 @@ static MelonframeResult process_length(struct MelonframeDecoder *p, const uint8_
             p->state = MELONFRAME_DECODER_STATE_READ_CRC;
         } else if (payload_len > p->buffer->size) {
             *status = MELONFRAME_STATUS_PAYLOAD_TOO_LARGE;
-            melonframe_decoder_reset(p);
         } else {
             p->state = MELONFRAME_DECODER_STATE_READ_PAYLOAD;
         }
@@ -257,7 +256,7 @@ MelonframeResult melonframe_decoder_process_byte(struct MelonframeDecoder *p, co
     }
 
     p->handler(p->context, *status, p->buffer->data, p->pos);
-    if (*status == MELONFRAME_STATUS_NEW_PACKET || *status < 0) {
+    if (*status == MELONFRAME_STATUS_NEW_PACKET || (*status < 0 && *status != MELONFRAME_STATUS_OUT_OF_SYNC)) {
         melonframe_decoder_reset(p);
     }
 

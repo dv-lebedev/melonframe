@@ -60,7 +60,11 @@ static void handler(void *ctx, enum MelonframeStatus status, uint8_t *data, cons
         FILE *f = (FILE*)ctx;
         fwrite(data, sizeof(uint8_t),data_len, f);
     } else if (status < 0) {
-        printf("handler melonframe_decoder_event_t returned %d\n", status);
+        if (status == MELONFRAME_STATUS_OUT_OF_SYNC) {
+            printf("decoder handler MELONFRAME_STATUS_OUT_OF_SYNC: %d\n", data[0]);
+        } else {
+            printf("decoder handler returned: %d\n", status);
+        }
     }
 }
 
