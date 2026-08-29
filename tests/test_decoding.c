@@ -59,7 +59,7 @@ static void handler(void *ctx, enum MelonframeStatus status, uint8_t *data, cons
     if (status == MELONFRAME_STATUS_NEW_PACKET) {
         FILE *f = (FILE*)ctx;
         fwrite(data, sizeof(uint8_t),data_len, f);
-    } else {
+    } else if (status < 0) {
         printf("handler melonframe_decoder_event_t returned %d\n", status);
     }
 }
@@ -87,7 +87,7 @@ static int32_t decode_and_write_encoded_packages(
         .data = malloc(sizeof(uint8_t) * decoder_buffer_size),
         .size = decoder_buffer_size,
     };
-    enum MelonframeStatus decoder_event;
+    enum MelonframeStatus decoder_event = MELONFRAME_STATUS_NONE;
     melonframe_decoder_init(&decoder, &decoder_buffer, handler, (void*)decoded_file);
 
     uint8_t buffer[read_buffer_size];

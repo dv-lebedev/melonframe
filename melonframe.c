@@ -150,6 +150,7 @@ static MelonframeResult push_to_buffer(struct MelonframeDecoder *p, const uint8_
 }
 
 static MelonframeResult process_header(struct MelonframeDecoder *p, const uint8_t b, enum MelonframeStatus *status) {
+    *status = MELONFRAME_STATUS_PROCESSING_HEADER;
     const MelonframeResult err = push_to_buffer(p, b);
     if (err != MELONFRAME_OK) {
         return err;
