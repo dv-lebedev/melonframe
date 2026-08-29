@@ -31,7 +31,7 @@ static int test_encoding() {
     const uint8_t arr[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x10};
 
     size_t encoded_size;
-    melonframe_result_t err = melonframe_get_size_for_encoded(sizeof(arr), &encoded_size);
+    MelonframeResult err = melonframe_get_size_for_encoded(sizeof(arr), &encoded_size);
     if (err != MELONFRAME_OK) {
         printf("melonframe_get_size_for_encoded: %d", err);
         return -1;

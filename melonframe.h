@@ -57,7 +57,7 @@
 extern "C" {
 #endif
 
-enum {
+enum MelonframeProto {
     MELONFRAME_PROTO_HEADER_SIZE = 2,
     MELONFRAME_PROTO_PAYLOAD_SIZE = 2,
     MELONFRAME_PROTO_CRC_SIZE = 2,
@@ -65,7 +65,7 @@ enum {
     MELONFRAME_PROTO_HEADER_VALUE = 0xAA55,
 };
 
-typedef enum {
+enum MelonframeStatus {
     MELONFRAME_STATUS_PROCESSING_CRC = 5,
     MELONFRAME_STATUS_PROCESSING_PAYLOAD = 4,
     MELONFRAME_STATUS_PROCESSING_LENGTH = 3,
@@ -74,9 +74,9 @@ typedef enum {
 
     MELONFRAME_STATUS_CRC_ERROR = -1,
     MELONFRAME_STATUS_OUT_OF_SYNC = -2,
-} melonframe_decoder_event_t;
+};
 
-typedef enum {
+typedef enum MelonframeResult {
     MELONFRAME_OK = 0,
     MELONFRAME_ERR_UNKNOWN = -1,
     MELONFRAME_ERR_ALLOC = -2,
@@ -84,59 +84,59 @@ typedef enum {
     MELONFRAME_ERR_BUFFER_OVERFLOW = -4,
     MELONFRAME_ERR_NULL_POINTER = -5,
     MELONFRAME_ERR_BUFFER_IS_NO_INITIALIZED = -6,
-} melonframe_result_t;
+} MelonframeResult;
 
 typedef uint16_t (*melonframe_crc16_t)(const uint8_t *data, size_t offset, size_t data_len);
 
 typedef void (*melonframe_decoder_event_handler_t)(
     void *ctx,
-    melonframe_decoder_event_t status,
+    enum MelonframeStatus status,
     uint8_t *data,
     size_t data_len);
 
-MELONFRAME_API melonframe_result_t melonframe_get_size_for_encoded(size_t buffer_size, size_t *encoded_size);
+MELONFRAME_API MelonframeResult melonframe_get_size_for_encoded(size_t buffer_size, size_t *encoded_size);
 
-MELONFRAME_API melonframe_result_t melonframe_encode(
+MELONFRAME_API MelonframeResult melonframe_encode(
     const uint8_t *bytes,
     size_t bytes_size,
     uint8_t *encoded,
     size_t encoded_size);
 
-typedef enum {
-    STATE_SEARCH_HEADER,
-    STATE_READ_LENGTH,
-    STATE_READ_PAYLOAD,
-    STATE_READ_CRC
-} decoder_state_t;
+typedef enum MelonframeDecoderState {
+    MELONFRAME_DECODER_STATE_SEARCH_HEADER,
+    MELONFRAME_DECODER_STATE_READ_LENGTH,
+    MELONFRAME_DECODER_STATE_READ_PAYLOAD,
+    MELONFRAME_DECODER_STATE_READ_CRC
+} MelonframeDecoderState;
 
-typedef struct {
+struct MelonframeBuffer {
     uint8_t *data;
     size_t size;
-} melonframe_buffer_t;
+};
 
-typedef struct {
-    decoder_state_t state;
-    melonframe_buffer_t *buffer;
+struct MelonframeDecoder {
+    MelonframeDecoderState state;
+    struct MelonframeBuffer *buffer;
     size_t payload_len;
     uint32_t pos;
     melonframe_decoder_event_handler_t handler;
     void *context;
-} melonframe_decoder_t;
+};
 
-MELONFRAME_API melonframe_result_t melonframe_decoder_init(
-    melonframe_decoder_t *p,
-    melonframe_buffer_t *buffer,
+MELONFRAME_API MelonframeResult melonframe_decoder_init(
+    struct MelonframeDecoder *p,
+    struct MelonframeBuffer *buffer,
     melonframe_decoder_event_handler_t handler,
     void *context);
 
-MELONFRAME_API melonframe_result_t melonframe_decoder_free(melonframe_decoder_t *p);
+MELONFRAME_API MelonframeResult melonframe_decoder_free(struct MelonframeDecoder *p);
 
-MELONFRAME_API melonframe_result_t melonframe_decoder_reset(melonframe_decoder_t *p);
+MELONFRAME_API MelonframeResult melonframe_decoder_reset(struct MelonframeDecoder *p);
 
-MELONFRAME_API melonframe_result_t melonframe_decoder_process_byte(
-    melonframe_decoder_t *p,
+MELONFRAME_API MelonframeResult melonframe_decoder_process_byte(
+    struct MelonframeDecoder *p,
     uint8_t b,
-    melonframe_decoder_event_t *status);
+    enum MelonframeStatus *status);
 
 #ifdef __cplusplus
 }

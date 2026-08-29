@@ -37,7 +37,7 @@ static int32_t write_repeated_encoded_packages(const uint16_t package_size, cons
     FILE *f = fopen(filepath, "wb");
 
     size_t encoded_size = 0;
-    const melonframe_result_t res = melonframe_get_size_for_encoded(sizeof(test), &encoded_size);
+    const MelonframeResult res = melonframe_get_size_for_encoded(sizeof(test), &encoded_size);
     if (res != MELONFRAME_OK) {
         printf("melonframe_decoder_process_byte returned %d\n, encoded_size: %llu\n", res, encoded_size);
         fclose(f);
@@ -55,7 +55,7 @@ static int32_t write_repeated_encoded_packages(const uint16_t package_size, cons
     return 0;
 }
 
-static void handler(void *ctx, melonframe_decoder_event_t status, uint8_t *data, const size_t data_len) {
+static void handler(void *ctx, enum MelonframeStatus status, uint8_t *data, const size_t data_len) {
     if (status == MELONFRAME_STATUS_NEW_PACKET) {
         FILE *f = (FILE*)ctx;
         fwrite(data, sizeof(uint8_t),data_len, f);
@@ -82,12 +82,12 @@ static int32_t decode_and_write_encoded_packages(
         return -1;
     }
 
-    melonframe_decoder_t decoder;
-    melonframe_buffer_t decoder_buffer = {
+    struct MelonframeDecoder decoder;
+    struct MelonframeBuffer decoder_buffer = {
         .data = malloc(sizeof(uint8_t) * decoder_buffer_size),
         .size = decoder_buffer_size,
     };
-    melonframe_decoder_event_t decoder_event;
+    enum MelonframeStatus decoder_event;
     melonframe_decoder_init(&decoder, &decoder_buffer, handler, (void*)decoded_file);
 
     uint8_t buffer[read_buffer_size];
@@ -98,7 +98,7 @@ static int32_t decode_and_write_encoded_packages(
         }
 
         for (int i = 0; i < read; i++) {
-            const melonframe_result_t res = melonframe_decoder_process_byte(&decoder, buffer[i], &decoder_event);
+            const MelonframeResult res = melonframe_decoder_process_byte(&decoder, buffer[i], &decoder_event);
             if (res != MELONFRAME_OK) {
                 printf("melonframe_decoder_process_byte returned %d\n", res);
                 fclose(decoded_file);

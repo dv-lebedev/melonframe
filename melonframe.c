@@ -42,7 +42,7 @@ static uint16_t melonframe_crc16(const uint8_t *data, const size_t offset, const
     return crc;
 }
 
-melonframe_result_t melonframe_get_size_for_encoded(const size_t buffer_size, size_t *encoded_size) {
+MelonframeResult melonframe_get_size_for_encoded(const size_t buffer_size, size_t *encoded_size) {
     const size_t size = buffer_size + MELONFRAME_PROTO_HEADER_SIZE +
             MELONFRAME_PROTO_PAYLOAD_SIZE + MELONFRAME_PROTO_CRC_SIZE;
 
@@ -54,7 +54,7 @@ melonframe_result_t melonframe_get_size_for_encoded(const size_t buffer_size, si
     return MELONFRAME_OK;
 }
 
-melonframe_result_t melonframe_encode(
+MelonframeResult melonframe_encode(
     const uint8_t *bytes,
     const size_t bytes_size,
     uint8_t *encoded,
@@ -65,7 +65,7 @@ melonframe_result_t melonframe_encode(
     }
 
     size_t pack_size;
-    const melonframe_result_t err = melonframe_get_size_for_encoded(bytes_size, &pack_size);
+    const MelonframeResult err = melonframe_get_size_for_encoded(bytes_size, &pack_size);
     if (err != MELONFRAME_OK) {
         return err;
     }
@@ -99,40 +99,40 @@ enum {
 };
 
 
-melonframe_result_t melonframe_decoder_init(
-    melonframe_decoder_t *p,
-    melonframe_buffer_t *buffer,
+MelonframeResult melonframe_decoder_init(
+    struct MelonframeDecoder *p,
+    struct MelonframeBuffer *buffer,
     const melonframe_decoder_event_handler_t handler,
     void *context) {
 
     memset(p, 0, sizeof(*p));
 
     p->buffer = buffer;
-    p->state = STATE_SEARCH_HEADER;
+    p->state = MELONFRAME_DECODER_STATE_SEARCH_HEADER;
     p->handler = handler;
     p->context = context;
 
     return MELONFRAME_OK;
 }
 
-melonframe_result_t melonframe_decoder_free(melonframe_decoder_t *p) {
+MelonframeResult melonframe_decoder_free(struct MelonframeDecoder *p) {
     return MELONFRAME_OK;
 }
 
- melonframe_result_t melonframe_decoder_reset(melonframe_decoder_t *p) {
-    p->state = STATE_SEARCH_HEADER;
+ MelonframeResult melonframe_decoder_reset(struct MelonframeDecoder *p) {
+    p->state = MELONFRAME_DECODER_STATE_SEARCH_HEADER;
     p->pos = 0;
     return MELONFRAME_OK;
 }
 
-static uint8_t *get_buffer_data(melonframe_decoder_t *p) {
+static uint8_t *get_buffer_data(struct MelonframeDecoder *p) {
     if (!p || !p->buffer || !p->buffer->data) {
         return NULL;
     }
     return p->buffer->data;
 }
 
-static melonframe_result_t push_to_buffer(melonframe_decoder_t *p, const uint8_t b) {
+static MelonframeResult push_to_buffer(struct MelonframeDecoder *p, const uint8_t b) {
     if (!p) {
         return MELONFRAME_ERR_NULL_POINTER;
     }
@@ -149,8 +149,8 @@ static melonframe_result_t push_to_buffer(melonframe_decoder_t *p, const uint8_t
     return MELONFRAME_OK;
 }
 
-static melonframe_result_t process_header(melonframe_decoder_t *p, const uint8_t b, melonframe_decoder_event_t *status) {
-    const melonframe_result_t err = push_to_buffer(p, b);
+static MelonframeResult process_header(struct MelonframeDecoder *p, const uint8_t b, enum MelonframeStatus *status) {
+    const MelonframeResult err = push_to_buffer(p, b);
     if (err != MELONFRAME_OK) {
         return err;
     }
@@ -160,7 +160,7 @@ static melonframe_result_t process_header(melonframe_decoder_t *p, const uint8_t
         const uint16_t header = (uint16_t)((buf[0] << 8) | buf[1]);
 
         if (header == MELONFRAME_PROTO_HEADER_VALUE) {
-            p->state = STATE_READ_LENGTH;
+            p->state = MELONFRAME_DECODER_STATE_READ_LENGTH;
         } else {
             /* resync: slide the window by one byte */
             buf[0] = buf[1];
@@ -172,9 +172,9 @@ static melonframe_result_t process_header(melonframe_decoder_t *p, const uint8_t
     return MELONFRAME_OK;
 }
 
-static melonframe_result_t process_length(melonframe_decoder_t *p, const uint8_t b, melonframe_decoder_event_t *status) {
+static MelonframeResult process_length(struct MelonframeDecoder *p, const uint8_t b, enum MelonframeStatus *status) {
     *status = MELONFRAME_STATUS_PROCESSING_LENGTH;
-    const melonframe_result_t err = push_to_buffer(p, b);
+    const MelonframeResult err = push_to_buffer(p, b);
     if (err != MELONFRAME_OK) {
         return err;
     }
@@ -185,35 +185,35 @@ static melonframe_result_t process_length(melonframe_decoder_t *p, const uint8_t
         p->payload_len = payload_len;
 
         if (payload_len == 0) {
-            p->state = STATE_READ_CRC;
+            p->state = MELONFRAME_DECODER_STATE_READ_CRC;
         } else if (payload_len > p->buffer->size) {
             // TODO: handle this more gracefully
-            p->state = STATE_SEARCH_HEADER;
+            p->state = MELONFRAME_DECODER_STATE_SEARCH_HEADER;
         } else {
-            p->state = STATE_READ_PAYLOAD;
+            p->state = MELONFRAME_DECODER_STATE_READ_PAYLOAD;
         }
     }
 
     return MELONFRAME_OK;
 }
 
-static melonframe_result_t process_payload(melonframe_decoder_t *p, const uint8_t b, melonframe_decoder_event_t *status) {
+static MelonframeResult process_payload(struct MelonframeDecoder *p, const uint8_t b, enum MelonframeStatus *status) {
     *status = MELONFRAME_STATUS_PROCESSING_PAYLOAD;
-    const melonframe_result_t err = push_to_buffer(p, b);
+    const MelonframeResult err = push_to_buffer(p, b);
     if (err != MELONFRAME_OK) {
         return err;
     }
 
     if ((p->pos - MELONFRAME_PROTO_HEADER_SIZE - MELONFRAME_PROTO_PAYLOAD_SIZE) == p->payload_len) {
-        p->state = STATE_READ_CRC;
+        p->state = MELONFRAME_DECODER_STATE_READ_CRC;
     }
 
     return MELONFRAME_OK;
 }
 
-static melonframe_result_t process_crc(melonframe_decoder_t *p, const uint8_t b, melonframe_decoder_event_t *status) {
+static MelonframeResult process_crc(struct MelonframeDecoder *p, const uint8_t b, enum MelonframeStatus *status) {
     *status = MELONFRAME_STATUS_PROCESSING_CRC;
-    const melonframe_result_t err = push_to_buffer(p, b);
+    const MelonframeResult err = push_to_buffer(p, b);
     if (err != MELONFRAME_OK) {
         return err;
     }
@@ -235,16 +235,16 @@ static melonframe_result_t process_crc(melonframe_decoder_t *p, const uint8_t b,
     return MELONFRAME_OK;
 }
 
-melonframe_result_t melonframe_decoder_process_byte(melonframe_decoder_t *p, const uint8_t b, melonframe_decoder_event_t *status) {
+MelonframeResult melonframe_decoder_process_byte(struct MelonframeDecoder *p, const uint8_t b, enum MelonframeStatus *status) {
     switch (p->state) {
-        case STATE_SEARCH_HEADER:
+        case MELONFRAME_DECODER_STATE_SEARCH_HEADER:
             return process_header(p, b, status);
-        case STATE_READ_LENGTH:
+        case MELONFRAME_DECODER_STATE_READ_LENGTH:
             return process_length(p, b, status);
-        case STATE_READ_PAYLOAD:
+        case MELONFRAME_DECODER_STATE_READ_PAYLOAD:
             return process_payload(p, b, status);
-        case STATE_READ_CRC: {
-            const melonframe_result_t err = process_crc(p, b, status);
+        case MELONFRAME_DECODER_STATE_READ_CRC: {
+            const MelonframeResult err = process_crc(p, b, status);
             if (*status == MELONFRAME_STATUS_NEW_PACKET || *status < 0) {
                 p->handler(p->context, *status, p->buffer->data, p->pos);
                 melonframe_decoder_reset(p);
