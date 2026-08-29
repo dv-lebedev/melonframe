@@ -74,6 +74,7 @@ enum MelonframeStatus {
     MELONFRAME_STATUS_NONE = 0,
     MELONFRAME_STATUS_CRC_ERROR = -1,
     MELONFRAME_STATUS_OUT_OF_SYNC = -2,
+    MELONFRAME_STATUS_PAYLOAD_TOO_LARGE = -3,
 };
 
 typedef enum MelonframeResult {

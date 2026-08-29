@@ -188,8 +188,8 @@ static MelonframeResult process_length(struct MelonframeDecoder *p, const uint8_
         if (payload_len == 0) {
             p->state = MELONFRAME_DECODER_STATE_READ_CRC;
         } else if (payload_len > p->buffer->size) {
-            // TODO: handle this more gracefully
-            p->state = MELONFRAME_DECODER_STATE_SEARCH_HEADER;
+            *status = MELONFRAME_STATUS_PAYLOAD_TOO_LARGE;
+            melonframe_decoder_reset(p);
         } else {
             p->state = MELONFRAME_DECODER_STATE_READ_PAYLOAD;
         }
